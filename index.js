@@ -78,7 +78,7 @@ app.use((error, req, res, next) => {
 })
 
 
-mongoose.connect('mongodb+srv://muharriss:celanabolong@cluster0.i2ftqtf.mongodb.net/blog?retryWrites=true&w=majority')
+mongoose.connect(process.env.MONGO_CONNECTION)
     .then(() => {
         app.listen(port, () => console.log('connection success'))
 
