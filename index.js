@@ -78,7 +78,18 @@ app.use((error, req, res, next) => {
 })
 
 
-mongoose.connect(process.env.MONGO_CONNECTION)
+const connectDB = async () => {
+    try {
+      const conn = await mongoose.connect(process.env.MONGO_CONNECTION);
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+    } catch (error) {
+      console.log(error);
+      process.exit(1);
+    }
+  }
+
+
+  connectDB()
     .then(() => {
         app.listen(port, () => console.log('connection success'))
 
