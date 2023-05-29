@@ -29,21 +29,14 @@ const fileFilter = (req, file, cb) => {
     }
 }
 app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     next();
 });
 
-const allowedOrigins = ['http://localhost:3000'];
 app.use(cors({
-    origin: (origin, callback) => {
-        if (allowedOrigins.includes(origin) || !origin) {
-            callback(null, true)
-        } else {
-            callback(new Error('Not allowed by CORS'))
-        }
-    },
+    origin: '*',
     methods: ['GET', 'POST', 'DELETE', 'PUT'], // Izinkan metode HTTP tertentu
     allowedHeaders: ['Content-Type', 'Authorization'] // Izinkan header tertentu
   }));
