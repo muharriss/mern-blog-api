@@ -35,8 +35,15 @@ app.use((req, res, next) => {
     next();
 });
 
+const allowedOrigins = ['http://localhost:3000'];
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: (origin, callback) => {
+        if (allowedOrigins.includes(origin) || !origin) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    },
     methods: ['GET', 'POST', 'DELETE', 'PUT'], // Izinkan metode HTTP tertentu
     allowedHeaders: ['Content-Type', 'Authorization'] // Izinkan header tertentu
   }));
