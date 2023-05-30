@@ -40,7 +40,7 @@ app.use((req, res, next) => {
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'DELETE', 'PUT'], // Izinkan metode HTTP tertentu
-    allowedHeaders: ['Content-Type', 'Authorization'] // Izinkan header tertentu
+    allowedHeaders: ['content-type', 'Authorization'] // Izinkan header tertentu
   }));
 
 app.use(bodyParser.json()) // type JSON
