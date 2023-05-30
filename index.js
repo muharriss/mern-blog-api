@@ -29,18 +29,18 @@ const fileFilter = (req, file, cb) => {
     }
 }
 app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', '*, http://localhost:3000');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'content-type, Authorization')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     res.setHeader("Access-Control-Allow-Credentials", "true")
     res.setHeader("Access-Control-Max-Age", "1800");
     next();
 });
 
 app.use(cors({
-    origin: '*',
+    origin: '*, http://localhost:3000',
     methods: ['GET', 'POST', 'DELETE', 'PUT'], // Izinkan metode HTTP tertentu
-    allowedHeaders: ['content-type', 'Authorization'] // Izinkan header tertentu
+    allowedHeaders: ['Content-Type', 'Authorization'] // Izinkan header tertentu
   }));
 
 app.use(bodyParser.json()) // type JSON
