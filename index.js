@@ -37,11 +37,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(cors({
-    origin: '*, http://localhost:3000',
-    methods: ['GET', 'POST', 'DELETE', 'PUT'], // Izinkan metode HTTP tertentu
-    allowedHeaders: ['Content-Type', 'Authorization'] // Izinkan header tertentu
-  }));
+app.use(cors());
 
 app.use(bodyParser.json()) // type JSON
 app.use('/images', express.static(path.join(__dirname, 'images')))
