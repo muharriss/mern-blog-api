@@ -38,7 +38,8 @@ const fileFilter = (req, file, cb) => {
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'DELETE', 'PUT'], // Izinkan metode HTTP tertentu
-    allowedHeaders: ['Content-Type', 'Authorization'] // Izinkan header tertentu
+    allowedHeaders: ['Content-Type', 'Authorization'], // Izinkan header tertentu
+    optionsSuccessStatus: 200
   }));
 
 app.use(bodyParser.json()) // type JSON
