@@ -10,6 +10,7 @@ app.post('/post',
 
 app.get('/posts', blogController.getAllBlogPost)
 app.get('/post/:postId', blogController.getBlogPostById)
+app.get('/posts/user', blogController.getBlogPostByUid)
 
 app.put('/post/:postId',
     [body('title').isLength({ min: 5 }).withMessage('input title tidak sesuai'),

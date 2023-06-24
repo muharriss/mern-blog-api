@@ -118,6 +118,59 @@ exports.getBlogPostById = (req, res, next) => {
         })
 }
 
+exports.getBlogPostByUid = (req, res, next) => {
+    const currentPage = req.query.page || 1
+    const perPage = req.query.perPage || 5
+    const sortBy = req.query.sort_by || 'createdAt';
+    const sortOrder = req.query.sort_order || 'desc';
+    let totalItem
+
+    BlogPost.find({
+        author: {
+            uid: req.user.userId,
+            name: req.user.name
+        }
+    })
+        .countDocuments()
+        .then(count => {
+            totalItem = count
+            return BlogPost.find({
+                author: {
+                    uid: req.user.userId,
+                    name: req.user.name
+                }
+            })
+                .sort({ [sortBy]: sortOrder })
+                .skip((parseInt(currentPage) - 1) * parseInt(perPage))
+                .limit(parseInt(perPage))
+        })
+        .then(result => {
+
+            const formattedPosts = result.map(post => {
+                return {
+                    _id: post._id,
+                    title: post.title,
+                    body: post.body,
+                    image: post.image,
+                    author: post.author,
+                    createdAt: post.createdAt.toDateString(),
+                    updatedAt: post.updatedAt.toDateString(),
+                }
+            });
+
+            res.status(200).json({
+                message: 'Data Blog post Berhasil dipanggil',
+                data: formattedPosts,
+                total_data: totalItem,
+                per_page: parseInt(perPage),
+                current_page: parseInt(currentPage)
+            })
+        })
+        .catch(err => {
+            next(err)
+        })
+}
+
 exports.updateBlogPost = (req, res, next) => {
     const hasil = validationResult(req)
 
