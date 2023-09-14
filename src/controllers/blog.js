@@ -3,8 +3,9 @@ const path = require('path')
 const fs = require('fs')
 const BlogPost = require('../models/blog');
 const { count } = require('console');
-const Register = require('../models/auth')
-
+const Register = require('../models/auth');
+const blog = require('../models/blog');
+const moment = require('moment');
 
 
 exports.createBlogPost = (req, res, next) => {
@@ -75,14 +76,17 @@ exports.getAllBlogPost = (req, res, next) => {
         .then(result => {
 
             const formattedPosts = result.map(post => {
+                const createdAt = moment(post.createdAt);
+                const updatedAt = moment(post.updatedAt);
                 return {
                     _id: post._id,
                     title: post.title,
                     body: post.body,
                     image: post.image,
                     author: post.author,
-                    createdAt: post.createdAt.toDateString(),
-                    updatedAt: post.updatedAt.toDateString(),
+                    comment: post.comment,
+                    createdAt: createdAt.fromNow(),
+                    updatedAt: updatedAt.fromNow(),
                 }
             });
 
@@ -147,14 +151,17 @@ exports.getBlogPostByUid = (req, res, next) => {
         .then(result => {
 
             const formattedPosts = result.map(post => {
+                const createdAt = moment(post.createdAt);
+                const updatedAt = moment(post.updatedAt);
                 return {
                     _id: post._id,
                     title: post.title,
                     body: post.body,
                     image: post.image,
                     author: post.author,
-                    createdAt: post.createdAt.toDateString(),
-                    updatedAt: post.updatedAt.toDateString(),
+                    comment: post.comment,
+                    createdAt: createdAt.fromNow(),
+                    updatedAt: updatedAt.fromNow(),
                 }
             });
 
@@ -223,10 +230,98 @@ exports.updateBlogPost = (req, res, next) => {
         })
 }
 
+exports.updateComment = (req, res, next) => {
+    const hasil = validationResult(req)
+
+    if (!hasil.isEmpty()) {
+        const err = new Error('Input Text Tidak Sesuai');
+        err.errorStatus = 400
+        err.data = hasil.array()
+        throw err
+    }
+
+    const postId = req.params.postId
+    const author = req.user.name
+    const { text } = req.body
+
+    const newComment = {
+        text: text,
+        author: author
+    }
+
+    BlogPost.findById(postId)
+        .then(post => {
+            if (!post) {
+                const err = new Error("Blog Post Tidak Ditemukan")
+                err.errorStatus = 404
+                throw err
+            }
+
+            post.comment.push(newComment);
+            return post.save()
+        })
+        .then(result => {
+            res.status(200).json({
+                message: 'update comment Sukses',
+                data: result
+            })
+        })
+        .catch(err => {
+            next(err)
+        })
+}
+
+exports.updateReplyComment = async (req, res, next) => {
+    try {
+        const hasil = validationResult(req)
+
+        if (!hasil.isEmpty()) {
+            const err = new Error('Input Text Tidak Sesuai');
+            err.errorStatus = 400
+            err.data = hasil.array()
+            throw err
+        }
+
+        const postId = req.params.postId
+        const author = req.user.name
+        const { text } = req.body
+        const commentId = req.params.commentId
+
+        const blogPost = await BlogPost.findById(postId)
+        if (!blogPost) {
+            const err = new Error("Blog Post Tidak Ditemukan")
+            err.errorStatus = 404
+            throw err
+        }
+
+        const comment = blogPost.comment.find((c) => c._id == commentId)
+        if (!comment) {
+            const err = new Error("Comment Tidak Ditemukan")
+            err.errorStatus = 404
+            throw err
+        }
+
+        const reply = {
+            text: text,
+            author: author,
+        }
+
+        comment.reply.push(reply)
+
+        await blogPost.save()
+
+        res.status(200).json({
+            message: 'reply comment Sukses',
+            data: blogPost
+        })
+
+    } catch (err) {
+        next(err)
+    }
+}
+
 exports.deleteBlogPost = (req, res, next) => {
     const postId = req.params.postId
-
-
 
     BlogPost.findById(postId)
         .then(post => {
@@ -255,6 +350,80 @@ exports.deleteBlogPost = (req, res, next) => {
         .catch(err => {
             next(err)
         })
+}
+
+exports.delateComment = async (req, res, next) => {
+    try {
+        const postId = req.params.postId
+        const commentId = req.params.commentId
+
+        const blogPost = await BlogPost.findById(postId)
+        if (!blogPost) {
+            const err = new Error("Blog Post Tidak Ditemukan")
+            err.errorStatus = 404
+            throw err
+        }
+
+        const comment = blogPost.comment.find((c) => c._id == commentId)
+        if (!comment) {
+            const err = new Error("Komentar Tidak Ditemukan")
+            err.errorStatus = 404
+            throw err
+        }
+
+        blogPost.comment = blogPost.comment.filter((c) => c._id != commentId);
+
+        await blogPost.save()
+
+        res.status(200).json({
+            massage: 'Komentar Berhasil Dihapus',
+            data: blogPost
+        })
+
+    } catch (err) {
+        next(err)
+    }
+}
+
+exports.delateReplyComment = async (req, res, next) => {
+    try {
+        const postId = req.params.postId
+        const commentId = req.params.commentId
+        const replyId = req.params.replyId
+    
+        const blogPost = await BlogPost.findById(postId)
+        if (!blogPost) {
+            const err = new Error("Blog Post Tidak Ditemukan")
+            err.errorStatus = 404
+            throw err
+        }
+    
+        const comment = blogPost.comment.find((c) => c._id == commentId)
+        if (!comment) {
+            const err = new Error("Komentar Tidak Ditemukan")
+            err.errorStatus = 404
+            throw err
+        }
+    
+        const reply = comment.reply.find((c) => c._id == replyId)
+        if (!reply) {
+            const err = new Error("Balasan Tidak Ditemukan")
+            err.errorStatus = 404
+            throw err
+        }
+    
+        comment.reply = comment.reply.filter((c) => c._id != replyId)
+    
+        await blogPost.save()
+    
+        res.status(200).json({
+            message: 'Balasan Berhasil Dihapus',
+            data: blogPost
+        })
+
+    } catch (err) {
+        next(err)
+    }
 }
 
 const removeImage = (filePath) => {
