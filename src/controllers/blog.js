@@ -7,8 +7,10 @@ const Register = require('../models/auth');
 const blog = require('../models/blog');
 const moment = require('moment');
 
+const firebase = require("firebase/app");
+const { getStorage, ref, uploadBytes, getMetadata, updateMetadata, getDownloadURL } = require("firebase/storage")
 
-exports.createBlogPost = (req, res, next) => {
+exports.createBlogPost = async (req, res, next) => {
 
     const hasil = validationResult(req)
 
@@ -25,8 +27,41 @@ exports.createBlogPost = (req, res, next) => {
         throw err
     }
 
+
+//firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyCd1vx2LXyTsIz3fXfzpEoyNfihGAzKm5o",
+        authDomain: "mern-myblog-api.firebaseapp.com",
+        projectId: "mern-myblog-api",
+        storageBucket: "mern-myblog-api.appspot.com",
+        messagingSenderId: "781210885516",
+        appId: "1:781210885516:web:37844124bbc9d6fd40caa9",
+        measurementId: "G-L4FFHLRL5Q"
+    };
+
+    firebase.initializeApp(firebaseConfig)
+
+    const storage = getStorage();
+    const storageRef = ref(storage, req.file.originalname);
+
+
+    // Upload file to Firebase Storage
+    await uploadBytes(storageRef, req.file.buffer);
+
+    // Get download URL for the uploaded image
+    const downloadURL = await getDownloadURL(storageRef);
+
+    // Get current metadata
+    // const metadata = await getMetadata(storageRef);
+
+    // Update metadata to set content type as image/jpeg
+    await updateMetadata(storageRef, {
+        contentType: req.file.mimetype
+    });
+//firebase
+
     const { title, body } = req.body
-    const image = req.file.path
+    const image = downloadURL
 
 
     const author = {
@@ -34,6 +69,7 @@ exports.createBlogPost = (req, res, next) => {
         name: req.user.name
     }
     console.log('author', author)
+    console.log("image", req.file)
 
     const posting = new BlogPost({
         title: title,
@@ -390,32 +426,32 @@ exports.delateReplyComment = async (req, res, next) => {
         const postId = req.params.postId
         const commentId = req.params.commentId
         const replyId = req.params.replyId
-    
+
         const blogPost = await BlogPost.findById(postId)
         if (!blogPost) {
             const err = new Error("Blog Post Tidak Ditemukan")
             err.errorStatus = 404
             throw err
         }
-    
+
         const comment = blogPost.comment.find((c) => c._id == commentId)
         if (!comment) {
             const err = new Error("Komentar Tidak Ditemukan")
             err.errorStatus = 404
             throw err
         }
-    
+
         const reply = comment.reply.find((c) => c._id == replyId)
         if (!reply) {
             const err = new Error("Balasan Tidak Ditemukan")
             err.errorStatus = 404
             throw err
         }
-    
+
         comment.reply = comment.reply.filter((c) => c._id != replyId)
-    
+
         await blogPost.save()
-    
+
         res.status(200).json({
             message: 'Balasan Berhasil Dihapus',
             data: blogPost
