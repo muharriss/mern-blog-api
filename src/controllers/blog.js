@@ -12,84 +12,97 @@ const { getStorage, ref, uploadBytes, getMetadata, updateMetadata, getDownloadUR
 
 exports.createBlogPost = async (req, res, next) => {
 
-    const hasil = validationResult(req)
+    try {
+        const hasil = validationResult(req)
+    
+        if (!hasil.isEmpty()) {
+            const err = new Error('Input Title atau Body Tidak Sesuai');
+            err.errorStatus = 400
+            err.data = hasil.array()
+            throw err
+        }
+    
+        if (!req.file) {
+            const err = new Error('Image Harus Di Upload');
+            err.errorStatus = 422
+            throw err
+        }
+    
+    
+    //firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCd1vx2LXyTsIz3fXfzpEoyNfihGAzKm5o",
+            authDomain: "mern-myblog-api.firebaseapp.com",
+            projectId: "mern-myblog-api",
+            storageBucket: "mern-myblog-api.appspot.com",
+            messagingSenderId: "781210885516",
+            appId: "1:781210885516:web:37844124bbc9d6fd40caa9",
+            measurementId: "G-L4FFHLRL5Q"
+        };
+    
+        firebase.initializeApp(firebaseConfig)
+    
+        const storage = getStorage();
+        const storageRef = ref(storage, req.file.originalname);
+    
+    
+        // Upload file to Firebase Storage
+        await uploadBytes(storageRef, req.file.buffer);
+    
+        // Get download URL for the uploaded image
+        const downloadURL = await getDownloadURL(storageRef);
+    
+        // Get current metadata
+        // const metadata = await getMetadata(storageRef);
+    
+        // Update metadata to set content type as image/jpeg
+        await updateMetadata(storageRef, {
+            contentType: req.file.mimetype
+        });
+    //firebase
+    
+        const { title, body } = req.body
+        const image = downloadURL
+    
+    
+        const author = {
+            uid: req.user.userId,
+            name: req.user.name
+        }
+        console.log('author', author)
+        console.log("image", req.file)
+    
+        const posting = new BlogPost({
+            title: title,
+            body: body,
+            image: image,
+            author: author
+        })
 
-    if (!hasil.isEmpty()) {
-        const err = new Error('Input Title atau Body Tidak Sesuai');
-        err.errorStatus = 400
-        err.data = hasil.array()
-        throw err
-    }
+       await posting.save()
 
-    if (!req.file) {
-        const err = new Error('Image Harus Di Upload');
-        err.errorStatus = 422
-        throw err
-    }
-
-
-//firebase
-    const firebaseConfig = {
-        apiKey: "AIzaSyCd1vx2LXyTsIz3fXfzpEoyNfihGAzKm5o",
-        authDomain: "mern-myblog-api.firebaseapp.com",
-        projectId: "mern-myblog-api",
-        storageBucket: "mern-myblog-api.appspot.com",
-        messagingSenderId: "781210885516",
-        appId: "1:781210885516:web:37844124bbc9d6fd40caa9",
-        measurementId: "G-L4FFHLRL5Q"
-    };
-
-    firebase.initializeApp(firebaseConfig)
-
-    const storage = getStorage();
-    const storageRef = ref(storage, req.file.originalname);
-
-
-    // Upload file to Firebase Storage
-    await uploadBytes(storageRef, req.file.buffer);
-
-    // Get download URL for the uploaded image
-    const downloadURL = await getDownloadURL(storageRef);
-
-    // Get current metadata
-    // const metadata = await getMetadata(storageRef);
-
-    // Update metadata to set content type as image/jpeg
-    await updateMetadata(storageRef, {
-        contentType: req.file.mimetype
-    });
-//firebase
-
-    const { title, body } = req.body
-    const image = downloadURL
-
-
-    const author = {
-        uid: req.user.userId,
-        name: req.user.name
-    }
-    console.log('author', author)
-    console.log("image", req.file)
-
-    const posting = new BlogPost({
-        title: title,
-        body: body,
-        image: image,
-        author: author
+       res.status(201).json({
+        message: "Create BLog Post Success",
+        data: posting
     })
 
-    posting.save()
-        .then(result => {
+    }catch (err){
+        next(err)
+    }  
 
-            res.status(201).json({
-                message: "Create BLog Post Success",
-                data: result
-            })
 
-        })
-        .catch(err => {
-            console.log('err:', err)
-        })
+    // posting.save()
+    //     .then(result => {
+
+    //         res.status(201).json({
+    //             message: "Create BLog Post Success",
+    //             data: result
+    //         })
+
+    //     })
+    //     .catch(err => {
+    //         console.log('err:', err)
+    //     })
 
 }
 
