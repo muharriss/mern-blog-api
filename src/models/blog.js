@@ -15,6 +15,10 @@ const BlogPost = new Schema({
         type: String,
         required: true
     },
+    imageName: {
+        type: String,
+        required: true
+    },
     author: {
         type: Object,
         required: true,

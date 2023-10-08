@@ -8,28 +8,28 @@ const blog = require('../models/blog');
 const moment = require('moment');
 
 const firebase = require("firebase/app");
-const { getStorage, ref, uploadBytes, getMetadata, updateMetadata, getDownloadURL } = require("firebase/storage")
+const { getStorage, ref, uploadBytes, getMetadata, updateMetadata, getDownloadURL, deleteObject } = require("firebase/storage")
 
 exports.createBlogPost = async (req, res, next) => {
 
     try {
         const hasil = validationResult(req)
-    
+
         if (!hasil.isEmpty()) {
             const err = new Error('Input Title atau Body Tidak Sesuai');
             err.errorStatus = 400
             err.data = hasil.array()
             throw err
         }
-    
+
         if (!req.file) {
             const err = new Error('Image Harus Di Upload');
             err.errorStatus = 422
             throw err
         }
-    
-    
-    //firebase
+
+
+        //firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCd1vx2LXyTsIz3fXfzpEoyNfihGAzKm5o",
             authDomain: "mern-myblog-api.firebaseapp.com",
@@ -39,56 +39,57 @@ exports.createBlogPost = async (req, res, next) => {
             appId: "1:781210885516:web:37844124bbc9d6fd40caa9",
             measurementId: "G-L4FFHLRL5Q"
         };
-    
+
         firebase.initializeApp(firebaseConfig)
-    
+
         const storage = getStorage();
         const storageRef = ref(storage, req.file.originalname);
-    
-    
+
+
         // Upload file to Firebase Storage
         await uploadBytes(storageRef, req.file.buffer);
-    
+
         // Get download URL for the uploaded image
         const downloadURL = await getDownloadURL(storageRef);
-    
+
         // Get current metadata
         // const metadata = await getMetadata(storageRef);
-    
+
         // Update metadata to set content type as image/jpeg
         await updateMetadata(storageRef, {
             contentType: req.file.mimetype
         });
-    //firebase
-    
+        //firebase
+
         const { title, body } = req.body
         const image = downloadURL
-    
-    
+        const imageName = req.file.originalname
+
         const author = {
             uid: req.user.userId,
             name: req.user.name
         }
         console.log('author', author)
         console.log("image", req.file)
-    
+
         const posting = new BlogPost({
             title: title,
             body: body,
             image: image,
+            imageName: imageName,
             author: author
         })
 
-       await posting.save()
+        await posting.save()
 
-       res.status(201).json({
-        message: "Create BLog Post Success",
-        data: posting
-    })
+        res.status(201).json({
+            message: "Create BLog Post Success",
+            data: posting
+        })
 
-    }catch (err){
+    } catch (err) {
         next(err)
-    }  
+    }
 
 
     // posting.save()
@@ -385,7 +386,8 @@ exports.deleteBlogPost = (req, res, next) => {
                 throw err
             }
 
-            removeImage(post.image)
+            // removeImage(post.image)
+            removefirebaseImage(post.imageName)
             return BlogPost.findByIdAndRemove(postId)
 
         })
@@ -481,4 +483,19 @@ const removeImage = (filePath) => {
 
     filePath = path.join(__dirname, '../..', filePath)
     fs.unlink(filePath, err => console.log(err))
+}
+
+const {storage} = require("../../config/firebase")
+const removefirebaseImage = (originalname) => {
+    // const storage = getStorage()
+
+    // Create a reference to the file to delete
+    const desertRef = ref(storage, `${originalname}`);
+
+    // Delete the file
+    deleteObject(desertRef).then(() => {
+       console.log("File deleted successfully")
+    }).catch((err) => {
+        console.log("File deleted error", err)
+    });
 }
