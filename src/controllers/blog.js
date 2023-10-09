@@ -228,56 +228,120 @@ exports.getBlogPostByUid = (req, res, next) => {
         })
 }
 
-exports.updateBlogPost = (req, res, next) => {
-    const hasil = validationResult(req)
+exports.updateBlogPost = async (req, res, next) => {
+    try {
+        const hasil = validationResult(req)
 
-    if (!hasil.isEmpty()) {
-        const err = new Error('invalid value');
-        err.errorStatus = 400
-        err.data = hasil.array()
-        throw err
+        if (!hasil.isEmpty()) {
+            const err = new Error('invalid value');
+            err.errorStatus = 400
+            err.data = hasil.array()
+            throw err
+        }
+
+        if (!req.file) {
+            const err = new Error('Image Harus Di Upload');
+            err.errorStatus = 422
+            throw err
+        }
+
+         //firebase
+         const firebaseConfig = {
+            apiKey: "AIzaSyCd1vx2LXyTsIz3fXfzpEoyNfihGAzKm5o",
+            authDomain: "mern-myblog-api.firebaseapp.com",
+            projectId: "mern-myblog-api",
+            storageBucket: "mern-myblog-api.appspot.com",
+            messagingSenderId: "781210885516",
+            appId: "1:781210885516:web:37844124bbc9d6fd40caa9",
+            measurementId: "G-L4FFHLRL5Q"
+        };
+
+        firebase.initializeApp(firebaseConfig)
+
+        const storage = getStorage();
+        const storageRef = ref(storage, req.file.originalname);
+
+
+        // Upload file to Firebase Storage
+        await uploadBytes(storageRef, req.file.buffer);
+
+        // Get download URL for the uploaded image
+        const downloadURL = await getDownloadURL(storageRef);
+
+        // Get current metadata
+        // const metadata = await getMetadata(storageRef);
+
+        // Update metadata to set content type as image/jpeg
+        await updateMetadata(storageRef, {
+            contentType: req.file.mimetype
+        });
+        //firebase
+
+        const { title, body } = req.body
+        const image = downloadURL
+        const imageName = req.file.originalname
+        const postId = req.params.postId
+
+        const blogPost = await BlogPost.findById(postId)
+        if (!blogPost) {
+            const err = new Error("Blog Post Tidak Ditemukan")
+            err.errorStatus = 404
+            throw err
+        }
+        if (blogPost.author.uid !== req.user.userId) {
+            const err = new Error("ini bukan postingan anda")
+            err.errorStatus = 403
+            throw err
+        }
+
+        removefirebaseImage(blogPost.imageName)
+
+        blogPost.title = title
+        blogPost.body = body
+        blogPost.image = image
+        blogPost.imageName = imageName
+
+        await blogPost.save()
+
+        res.status(200).json({
+            message: 'update Sukses',
+            data: blogPost
+        })
+
+        // BlogPost.findById(postId)
+        //     .then(post => {
+        //         if (!post) {
+        //             const err = new Error("Blog Post Tidak Ditemukan")
+        //             err.errorStatus = 404
+        //             throw err
+        //         }
+        //         if (post.author.uid !== req.user.userId) {
+        //             const err = new Error("ini bukan postingan anda")
+        //             err.errorStatus = 403
+        //             throw err
+        //         }
+
+        //         removeImage(post.image)
+
+        //         post.title = title
+        //         post.body = body
+        //         post.image = image
+
+        //         return post.save()
+        //     })
+        //     .then(result => {
+        //         res.status(200).json({
+        //             message: 'update Sukses',
+        //             data: result
+        //         })
+        //     })
+        //     .catch(err => {
+        //         next(err)
+        //     })
     }
-
-    if (!req.file) {
-        const err = new Error('Image Harus Di Upload');
-        err.errorStatus = 422
-        throw err
+    catch (err) {
+        next(err)
     }
-
-    const { title, body } = req.body
-    const image = req.file.path
-    const postId = req.params.postId
-
-    BlogPost.findById(postId)
-        .then(post => {
-            if (!post) {
-                const err = new Error("Blog Post Tidak Ditemukan")
-                err.errorStatus = 404
-                throw err
-            }
-            if (post.author.uid !== req.user.userId) {
-                const err = new Error("ini bukan postingan anda")
-                err.errorStatus = 403
-                throw err
-            }
-
-            removeImage(post.image)
-
-            post.title = title
-            post.body = body
-            post.image = image
-
-            return post.save()
-        })
-        .then(result => {
-            res.status(200).json({
-                message: 'update Sukses',
-                data: result
-            })
-        })
-        .catch(err => {
-            next(err)
-        })
 }
 
 exports.updateComment = (req, res, next) => {
@@ -433,8 +497,8 @@ exports.delateComment = async (req, res, next) => {
             err.errorStatus = 403
             throw err
         }
-        console.log('comment user id',comment.author.uid )
-        console.log('user id', req.user.userId )
+        console.log('comment user id', comment.author.uid)
+        console.log('user id', req.user.userId)
 
         blogPost.comment = blogPost.comment.filter((c) => c._id != commentId);
 
@@ -505,7 +569,7 @@ const removeImage = (filePath) => {
     fs.unlink(filePath, err => console.log(err))
 }
 
-const {storage} = require("../../config/firebase")
+const { storage } = require("../../config/firebase")
 const removefirebaseImage = (originalname) => {
     // const storage = getStorage()
 
@@ -514,7 +578,7 @@ const removefirebaseImage = (originalname) => {
 
     // Delete the file
     deleteObject(desertRef).then(() => {
-       console.log("File deleted successfully")
+        console.log("File deleted successfully")
     }).catch((err) => {
         console.log("File deleted error", err)
     });
