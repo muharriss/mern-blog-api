@@ -291,7 +291,10 @@ exports.updateComment = (req, res, next) => {
     }
 
     const postId = req.params.postId
-    const author = req.user.name
+    const author = {
+        uid: req.user.userId,
+        name: req.user.name
+    }
     const { text } = req.body
 
     const newComment = {
@@ -333,7 +336,10 @@ exports.updateReplyComment = async (req, res, next) => {
         }
 
         const postId = req.params.postId
-        const author = req.user.name
+        const author = {
+            uid: req.user.userId,
+            name: req.user.name
+        }
         const { text } = req.body
         const commentId = req.params.commentId
 
@@ -422,6 +428,14 @@ exports.delateComment = async (req, res, next) => {
             throw err
         }
 
+        if (comment.author.uid !== req.user.userId) {
+            const err = new Error("ini bukan komentar anda")
+            err.errorStatus = 403
+            throw err
+        }
+        console.log('comment user id',comment.author.uid )
+        console.log('user id', req.user.userId )
+
         blogPost.comment = blogPost.comment.filter((c) => c._id != commentId);
 
         await blogPost.save()
@@ -460,6 +474,12 @@ exports.delateReplyComment = async (req, res, next) => {
         if (!reply) {
             const err = new Error("Balasan Tidak Ditemukan")
             err.errorStatus = 404
+            throw err
+        }
+
+        if (reply.author.uid !== req.user.userId) {
+            const err = new Error("ini bukan komentar anda")
+            err.errorStatus = 403
             throw err
         }
 
