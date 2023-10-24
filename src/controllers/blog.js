@@ -114,11 +114,11 @@ exports.getAllBlogPost = (req, res, next) => {
     const sortOrder = req.query.sort_order || 'desc';
     let totalItem
 
-    BlogPost.find()
+    BlogPost.find({ hidden: false })
         .countDocuments()
         .then(count => {
             totalItem = count
-            return BlogPost.find()
+            return BlogPost.find({ hidden: false })
                 .sort({ [sortBy]: sortOrder })
                 .skip((parseInt(currentPage) - 1) * parseInt(perPage))
                 .limit(parseInt(perPage))
@@ -134,6 +134,7 @@ exports.getAllBlogPost = (req, res, next) => {
                     body: post.body,
                     image: post.image,
                     author: post.author,
+                    hidden: post.hidden,
                     comment: post.comment,
                     createdAt: createdAt.fromNow(),
                     updatedAt: updatedAt.fromNow(),
@@ -209,6 +210,7 @@ exports.getBlogPostByUid = (req, res, next) => {
                     body: post.body,
                     image: post.image,
                     author: post.author,
+                    hidden: post.hidden,
                     comment: post.comment,
                     createdAt: createdAt.fromNow(),
                     updatedAt: updatedAt.fromNow(),
@@ -437,6 +439,36 @@ exports.updateReplyComment = async (req, res, next) => {
 
     } catch (err) {
         next(err)
+    }
+}
+
+exports.updateStatus = async (req, res, next) => {
+    try{
+        const postId = req.params.postId
+        const blogPost = await BlogPost.findById(postId)
+        if (!blogPost) {
+            const err = new Error("Blog Post Tidak Ditemukan")
+            err.errorStatus = 404
+            throw err
+        }
+
+        if (blogPost.author.uid !== req.user.userId) {
+            const err = new Error("ini bukan postingan anda")
+            err.errorStatus = 403
+            throw err
+        }
+
+        blogPost.hidden = !blogPost.hidden
+
+        await blogPost.save()
+
+        res.status(200).json({
+            message: 'Preferensi pengguna berhasil diperbarui',
+            data: blogPost
+        })
+
+    }catch(err)  {
+      next(err)  
     }
 }
 

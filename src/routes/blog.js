@@ -22,6 +22,7 @@ app.put('/post/:postId/comment',
 app.put('/post/:postId/comment/:commentId/reply',
     [body('text').isLength({ min: 1 }).withMessage('input text tidak sesuai')],
     blogController.updateReplyComment)
+app.put('/post/:postId/status', blogController.updateStatus)
 
 app.delete('/post/:postId', blogController.deleteBlogPost)
 app.delete('/post/:postId/comment/:commentId', blogController.delateComment)

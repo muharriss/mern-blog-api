@@ -23,6 +23,10 @@ const BlogPost = new Schema({
         type: Object,
         required: true,
     },
+    hidden: {
+        type: Boolean,
+        default: false
+    },
     comment: [
         {
             text: String,
