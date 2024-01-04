@@ -154,23 +154,46 @@ exports.getAllBlogPost = (req, res, next) => {
         })
 }
 
-exports.getBlogPostById = (req, res, next) => {
-    const postId = req.params.postId
-    BlogPost.findById(postId)
-        .then(result => {
-            if (!result) {
-                const error = new Error('Blog Post Tidak Ditemukan')
-                error.errorStatus = 404
-                throw error
-            }
-            res.status(200).json({
-                massage: 'Data Blog Post Berhasil Dipanggil',
-                data: result
-            })
+// exports.getBlogPostById = (req, res, next) => {
+//     const postId = req.params.postId
+//     BlogPost.findById(postId)
+//         .then(result => {
+//             if (!result) {
+//                 const error = new Error('Blog Post Tidak Ditemukan')
+//                 error.errorStatus = 404
+//                 throw error
+//             }
+//             res.status(200).json({
+//                 massage: 'Data Blog Post Berhasil Dipanggil',
+//                 data: result
+//             })
+//         })
+//         .catch(err => {
+//             next(err)
+//         })
+// }
+
+exports.getBlogPostById = async (req, res, next) => {
+    try {
+        const postId = req.params.postId
+        const blogPost = await BlogPost.findById(postId)
+
+        if (!blogPost) {
+            const error = new Error('Blog Post Tidak Ditemukan')
+            error.errorStatus = 404
+            throw error
+        }
+
+        blogPost.comment.sort((a, b) => b.createdAt - a.createdAt);
+
+        res.status(200).json({
+            massage: 'Data Blog Post Berhasil Dipanggil',
+            data: blogPost
         })
-        .catch(err => {
-            next(err)
-        })
+
+    } catch (err) {
+        next(err)
+    }
 }
 
 exports.getBlogPostByUid = (req, res, next) => {
@@ -247,8 +270,8 @@ exports.updateBlogPost = async (req, res, next) => {
             throw err
         }
 
-         //firebase
-         const firebaseConfig = {
+        //firebase
+        const firebaseConfig = {
             apiKey: "AIzaSyCd1vx2LXyTsIz3fXfzpEoyNfihGAzKm5o",
             authDomain: "mern-myblog-api.firebaseapp.com",
             projectId: "mern-myblog-api",
@@ -443,7 +466,7 @@ exports.updateReplyComment = async (req, res, next) => {
 }
 
 exports.updateStatus = async (req, res, next) => {
-    try{
+    try {
         const postId = req.params.postId
         const blogPost = await BlogPost.findById(postId)
         if (!blogPost) {
@@ -467,8 +490,8 @@ exports.updateStatus = async (req, res, next) => {
             data: blogPost
         })
 
-    }catch(err)  {
-      next(err)  
+    } catch (err) {
+        next(err)
     }
 }
 

@@ -33,11 +33,19 @@ const BlogPost = new Schema({
             author: {
                 type: Object
             },
+            createdAt: {
+                type: Date,
+                default: Date.now
+            },
             reply: [
                 {
                     text: String,
                     author: {
                         type: Object
+                    },
+                    createdAt: {
+                        type: Date,
+                        default: Date.now
                     }
                 }
             ]
