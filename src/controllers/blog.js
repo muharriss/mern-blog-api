@@ -31,19 +31,20 @@ exports.createBlogPost = async (req, res, next) => {
 
         //firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyCd1vx2LXyTsIz3fXfzpEoyNfihGAzKm5o",
-            authDomain: "mern-myblog-api.firebaseapp.com",
-            projectId: "mern-myblog-api",
-            storageBucket: "mern-myblog-api.appspot.com",
-            messagingSenderId: "781210885516",
-            appId: "1:781210885516:web:37844124bbc9d6fd40caa9",
-            measurementId: "G-L4FFHLRL5Q"
+            apiKey: process.env.apiKey,
+            authDomain: process.env.authDomain,
+            projectId: process.env.projectId,
+            storageBucket: process.env.storageBucket,
+            messagingSenderId: process.env.messagingSenderId,
+            appId: process.env.appId,
+            measurementId: process.env.measurementId
         };
 
         firebase.initializeApp(firebaseConfig)
 
         const storage = getStorage();
-        const storageRef = ref(storage, req.file.originalname);
+        const uniqueFilename = Date.now() + '_' + req.file.originalname;
+        const storageRef = ref(storage, uniqueFilename);
 
 
         // Upload file to Firebase Storage
@@ -63,8 +64,7 @@ exports.createBlogPost = async (req, res, next) => {
 
         const { title, body } = req.body
         const image = downloadURL
-        const imageName = req.file.originalname
-
+        const imageName = uniqueFilename
         const author = {
             uid: req.user.userId,
             name: req.user.name
@@ -272,19 +272,20 @@ exports.updateBlogPost = async (req, res, next) => {
 
         //firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyCd1vx2LXyTsIz3fXfzpEoyNfihGAzKm5o",
-            authDomain: "mern-myblog-api.firebaseapp.com",
-            projectId: "mern-myblog-api",
-            storageBucket: "mern-myblog-api.appspot.com",
-            messagingSenderId: "781210885516",
-            appId: "1:781210885516:web:37844124bbc9d6fd40caa9",
-            measurementId: "G-L4FFHLRL5Q"
+            apiKey: process.env.apiKey,
+            authDomain: process.env.authDomain,
+            projectId: process.env.projectId,
+            storageBucket: process.env.storageBucket,
+            messagingSenderId: process.env.messagingSenderId,
+            appId: process.env.appId,
+            measurementId: process.env.measurementId
         };
 
         firebase.initializeApp(firebaseConfig)
 
         const storage = getStorage();
-        const storageRef = ref(storage, req.file.originalname);
+        const uniqueFilename = Date.now() + '_' + req.file.originalname;
+        const storageRef = ref(storage, uniqueFilename);
 
 
         // Upload file to Firebase Storage
@@ -304,7 +305,7 @@ exports.updateBlogPost = async (req, res, next) => {
 
         const { title, body } = req.body
         const image = downloadURL
-        const imageName = req.file.originalname
+        const imageName = uniqueFilename
         const postId = req.params.postId
 
         const blogPost = await BlogPost.findById(postId)
